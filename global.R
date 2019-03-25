@@ -1,10 +1,11 @@
 
-# load function
+# load packages
 require(shiny)
 require(dplyr)
 require(ggplot2)
 require(purrr)
 require(tidyr)
+require(stringr)
 
 vitaltypes <- tribble(
   ~field, ~label, ~color,

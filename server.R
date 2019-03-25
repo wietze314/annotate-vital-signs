@@ -22,7 +22,8 @@ shinyServer(function(input, output, session) {
   }
   
   vitals <- reactive({
-    getCaseData(getCase = input$case)
+    getCaseData(getCase = input$case) %>%
+      mutate(id = paste0('id',row_number()))
   }) 
   
   observe({
@@ -40,13 +41,15 @@ shinyServer(function(input, output, session) {
     status = rep(FALSE, 1)
   )
   
-  # Click to mark artifacts
+  # Click to toggle artifact status
   
   observeEvent(input$VitalsPlot_click, {
     res <- nearPoints(vitals(), input$VitalsPlot_click, allRows = TRUE)[1:artefacts$numberofvitals,]
     
     artefacts$status <- xor(artefacts$status, res$selected_)
   })
+  
+  # Drag to toggle artifact status brush
   
   observeEvent(input$VitalsPlot_brush, {
     res <- brushedPoints(vitals(), input$VitalsPlot_brush, allRows = TRUE)[1:artefacts$numberofvitals,]
@@ -86,7 +89,7 @@ shinyServer(function(input, output, session) {
                            labels = vitaltypes$label))
     if((plotvitals %>% filter(grepl("nibp$",type)) %>% nrow) > 0){
       nibpdat <- plotvitals %>% filter(grepl("nibp$",type)) %>% 
-        select(-value, - artefact) %>%
+        select(-value, - artefact,-id) %>%
         spread(type, plotvalue) %>%
         mutate(type = factor(match("meannibp", vitaltypes$field), 
                              levels = seq_len(nrow(vitaltypes)), 
@@ -103,7 +106,7 @@ shinyServer(function(input, output, session) {
     }
     
     
-    plotid <- "test"
+    plotid <- input$case
     
     ggplot(plotdat,
            aes(x = time, y = plotvalue, color = type)) +
@@ -128,32 +131,39 @@ shinyServer(function(input, output, session) {
   
   
   output$artefacts <- renderDataTable(
-    vitals()[artefacts$status,] %>% 
-      mutate(id = row_number()) %>%
+    vitals() %>%
+      filter(artefacts$status) %>% 
       arrange(type, time) %>%
       group_by(type) %>%
       mutate(vital = if_else(row_number()==1,unlist(vitaltypes[match(type, vitaltypes$field),"label"]),""),
              time = as.integer(floor(time))) %>%
       ungroup() %>%
       select(id, vital, time, value) %>%
-      mutate(delete = shinyInput(actionButton, 
-                                 nrow(.),
-                                 'button_', 
+      rowwise() %>%
+      mutate(delete = as.character(actionButton( 
+                                 paste0('button',id), 
                                  label = "Delete", 
-                                 onclick = paste0('Shiny.onInputChange(\"select_button\",  ',id,')') )),
-        server = FALSE, escape = FALSE, selection = 'none'
-    
+                                 onclick = paste0('Shiny.onInputChange(\"select_button\",  this.id)') ))),
+        escape = FALSE
   )
+
+  tstValue <- reactiveValues(artefact = '')
   
   observeEvent(input$select_button, {
-    selectedRow <- as.numeric(strsplit(input$select_button, "_")[[1]][2])
+    
+    #reverse select id
+    rowid <- str_extract(input$select_button,pattern="(?<=button).+")
+    artefacts$status[vitals()$id == rowid] <- FALSE
+    
+    tstValue$artefact <- rowid
     
     # some kind of way to remove artefact status from row (id)
     # https://github.com/rstudio/DT/issues/178
   })
   
+  
   output$debug <- renderPrint({
-    str(artefacts$status)
+    tstValue$artefact
     
     # vitals() %>% filter(grepl("nibp$",type)) %>% 
     #   select(-value, -artefact) %>%
