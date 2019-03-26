@@ -22,8 +22,7 @@ shinyServer(function(input, output, session) {
   }
   
   vitals <- reactive({
-    getCaseData(getCase = input$case) %>%
-      mutate(id = paste0('id',row_number()))
+    getCaseData(getCase = input$case)
   }) 
   
   observe({
@@ -35,6 +34,8 @@ shinyServer(function(input, output, session) {
   
   # numberofvitals <- nrow(vitals())
   # numberofvitals <- 215
+  
+  # to change to dataframe with id and artefact status
   
   artefacts <- reactiveValues(
     numberofvitals = 1,
@@ -129,10 +130,12 @@ shinyServer(function(input, output, session) {
   })
   
   
+  # still gives an error when there are no artefacts marked.
   
   output$artefacts <- renderDataTable(
     vitals() %>%
-      filter(artefacts$status) %>% 
+      # should be changed to a join with id
+      filter(artefacts$status) %>%
       arrange(type, time) %>%
       group_by(type) %>%
       mutate(vital = if_else(row_number()==1,unlist(vitaltypes[match(type, vitaltypes$field),"label"]),""),
@@ -143,8 +146,9 @@ shinyServer(function(input, output, session) {
       mutate(delete = as.character(actionButton( 
                                  paste0('button',id), 
                                  label = "Delete", 
-                                 onclick = paste0('Shiny.onInputChange(\"select_button\",  this.id)') ))),
-        escape = FALSE
+                                 onclick = paste0('Shiny.onInputChange(\"select_button\",  this.id)') ))) %>%
+      ungroup(),
+      escape = FALSE
   )
 
   tstValue <- reactiveValues(artefact = '')
@@ -157,21 +161,12 @@ shinyServer(function(input, output, session) {
     
     tstValue$artefact <- rowid
     
-    # some kind of way to remove artefact status from row (id)
-    # https://github.com/rstudio/DT/issues/178
   })
   
   
-  output$debug <- renderPrint({
-    tstValue$artefact
-    
-    # vitals() %>% filter(grepl("nibp$",type)) %>% 
-    #   select(-value, -artefact) %>%
-    #   spread(type, plotvalue) %>%
-    #   mutate(type = factor(match("meannibp", vitaltypes$field), 
-    #                        levels = seq_len(nrow(vitaltypes)), 
-    #                        labels = vitaltypes$label),
-    #          plotvalue = meannibp)
-  })
+  # output$debug <- renderPrint({
+  #   # tstValue$artefact
+  #   
+  # })
   
 })
