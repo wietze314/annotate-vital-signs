@@ -141,7 +141,7 @@ shinyServer(function(input, output, session) {
                                  'button_', 
                                  label = "Delete", 
                                  onclick = paste0('Shiny.onInputChange(\"select_button\",  ',id,')') )),
-        server = FALSE, escape = FALSE, selection = 'none'
+        escape = FALSE
     
   )
   
@@ -154,14 +154,15 @@ shinyServer(function(input, output, session) {
   
   output$debug <- renderPrint({
     str(artefacts$status)
+  })
+  
+  observeEvent(input$Save, {
     
-    # vitals() %>% filter(grepl("nibp$",type)) %>% 
-    #   select(-value, -artefact) %>%
-    #   spread(type, plotvalue) %>%
-    #   mutate(type = factor(match("meannibp", vitaltypes$field), 
-    #                        levels = seq_len(nrow(vitaltypes)), 
-    #                        labels = vitaltypes$label),
-    #          plotvalue = meannibp)
+    dat <- vitals()
+    dat$artefact <- artefacts$status
+    timestmp <- format(Sys.time(),"%Y%m%d_%H_%M_%S")
+    saveRDS(dat,
+            paste0("data/annotated_case_",input$case,"_",timestmp,".RDS"))
   })
   
 })
