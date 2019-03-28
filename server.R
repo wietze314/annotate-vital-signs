@@ -160,13 +160,20 @@ shinyServer(function(input, output, session) {
     artefacts$status[vitals()$id == rowid] <- FALSE
     
     tstValue$artefact <- rowid
-    
   })
   
+  output$debug <- renderPrint({
+    str(artefacts$status)
+  })
   
-  # output$debug <- renderPrint({
-  #   # tstValue$artefact
-  #   
-  # })
+  observeEvent(input$Save, {
+    
+    dat <- vitals()
+    dat$artefact <- artefacts$status
+    timestmp <- format(Sys.time(),"%Y%m%d_%H_%M_%S")
+    saveRDS(dat,
+            paste0("data/annotated_case_",input$case,"_",timestmp,".RDS"))
+  })
+
   
 })
