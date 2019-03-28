@@ -64,7 +64,7 @@ shinyServer(function(input, output, session) {
     mintime <- floor(min(vitals()[,'time']))
     maxtime <- ceiling(max((vitals()[,'time']-60),mintime))
     
-    # change range of slider input
+  # change range of slider input to match duration of surgery
     updateSliderInput(session = session, inputId = "PlotTime", min = mintime,  max = maxtime)
     
   })

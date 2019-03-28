@@ -7,6 +7,8 @@ require(purrr)
 require(tidyr)
 require(stringr)
 
+set.seed(314)
+
 vitaltypes <- tribble(
   ~field, ~label, ~color,
   "sysnibp", "systolic NIBP", "0000FF",
@@ -25,14 +27,17 @@ names(vitalpalette) <- vitaltypes$label
 
 getCaseData <- function(getCase = 1){
   
+  # example data is simulated
+  # this function should be replaced by a function that collects the actual data from the AIMS
+  
   set.seed(getCase)
   
   vitals <- data.frame(time = 1:150,
                        heartrate = round(rnorm(150,60, 5)),
-                       saturation = 100 - sample(0:10,
+                       saturation = 100 - sample(0:9,
                                                  150,
                                                  replace = TRUE,
-                                                 prob = 10:0)) %>%
+                                                 prob = c(.8,.05,.05,.02,.02,.02,.01,.01,.01,.01))) %>%
     gather(type, value, - time) 
   
   vitalsnibp <- data.frame(time = 1:30*5-2,
@@ -55,6 +60,13 @@ getCaseData <- function(getCase = 1){
 }
 
 # collect case data
-cases <- 1:10
+
+# example data is simulated
+# this function should be replaced by a function that collects the actual cases from the AIMS
 
 
+caseinfo <- data.frame(id = 1:10,
+                    dos = as.Date('2018-04-01') + sample(-10:10,10),
+                    procedure = "test procedure")
+
+casechoices <- setNames(caseinfo$id, paste(caseinfo$id, caseinfo$dos, caseinfo$procedure))

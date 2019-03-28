@@ -16,11 +16,12 @@ shinyUI(fluidPage(
   titlePanel("Annotate your data now"),
   
   # Sidebar with a slider input for number of bins 
+  
   sidebarLayout(
     sidebarPanel(
       selectInput(inputId = "case",
                   label = "Select case:",
-                  choices = cases)
+                  choices = casechoices)
     ),
     
     # Show a plot of the generated distribution
