@@ -10,7 +10,7 @@
 library(shiny)
 
 # Define UI for application that draws a histogram
-shinyUI(fluidPage(
+shinyUI(fluidPage(theme = "shiny.css",
   
   # Application title
   titlePanel("Annotate your data now"),
@@ -21,7 +21,10 @@ shinyUI(fluidPage(
     sidebarPanel(
       selectInput(inputId = "case",
                   label = "Select case:",
-                  choices = casechoices)
+                  choices = casechoices),
+      textAreaInput("remarks","Remarks"),
+      actionButton("Save","Save"),
+      textOutput("FileStatus")
     ),
     
     # Show a plot of the generated distribution
@@ -33,10 +36,6 @@ shinyUI(fluidPage(
                               width = "95%"),
                   actionButton("TimePlus30", "+30")
       ),
-      splitLayout(cellWidths = c('20%','80%'),
-                  actionButton("Save","Save"),
-                  textOutput("FileStatus")),
-      
       h2("Marked Artefacts"),
       dataTableOutput("artefacts"),
       verbatimTextOutput("debug")

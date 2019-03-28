@@ -38,6 +38,9 @@ shinyServer(function(input, output, session) {
     artefacts$status <- data.frame(id = vitals()$id,
                                    status = FALSE,
                                    stringsAsFactors = FALSE)
+    updateTextAreaInput(session = session,
+                        inputId = "remarks",
+                        value = "")
   })
   
   # to change to dataframe with id and artefact status
@@ -182,12 +185,32 @@ shinyServer(function(input, output, session) {
     
   })
   
+  # file handling
+  
+  dir_case_files <- function(){
+    dir("data/", pattern = paste0("annotated_case_",input$case))
+  }
+  
+  case_files <- reactivePoll(10, session, checkFunc=dir_case_files, valueFunc=dir_case_files)
+  
+  output$FileStatus <- renderText({
+    fl <- case_files()
+    if(length(fl>0)){
+    paste0("Data previously stored as: ",fl[order(fl,decreasing = TRUE)[1]],
+          " (",length(fl), " files present)")
+    }
+  })
+  
   observeEvent(input$Save, {
-    
+    # create listobject for storing original data, annotations and other data
     dat <- vitals()
-    dat$artefact <- artefacts$status
+    art <- artefacts$status
+    
     timestmp <- format(Sys.time(),"%Y%m%d_%H_%M_%S")
-    saveRDS(dat,
+    
+    saveRDS(list(vitaldata = dat,
+                 artefacts = art,
+                 remarks = input$remarks),
             paste0("data/annotated_case_",input$case,"_",timestmp,".RDS"))
   })
   
