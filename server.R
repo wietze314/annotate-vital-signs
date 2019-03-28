@@ -22,17 +22,22 @@ shinyServer(function(input, output, session) {
   }
   
   vitals <- reactive({
-    getCaseData(getCase = input$case)
+    
+    # prepare delete buttons here, since rowwise() hurts performance
+    
+    getCaseData(getCase = input$case) %>%
+      rowwise() %>%
+      mutate(delete = as.character(actionButton(
+        paste0('button',id),
+        label = "Delete",
+        onclick = paste0('Shiny.onInputChange(\"select_button\",  this.id)') ))) %>%
+      ungroup()
   }) 
   
   observe({
     artefacts$status <- data.frame(id = vitals()$id,
                                    status = FALSE,
                                    stringsAsFactors = FALSE)
-    n <- nrow(vitals())
-    # artefacts$status <- list()
-    artefacts$numberofvitals <- n
-    # artefacts$status <- rep(FALSE,n)
   })
   
   # to change to dataframe with id and artefact status
@@ -67,11 +72,11 @@ shinyServer(function(input, output, session) {
     session$resetBrush("VitalsPlot_brush")
   })
   
+  # change range of slider input to match duration of surgery
+  
   observe({
     mintime <- floor(min(vitals()[,'time']))
     maxtime <- ceiling(max((vitals()[,'time']-60),mintime))
-    
-    # change range of slider input to match duration of surgery
     
     updateSliderInput(session = session, inputId = "PlotTime", min = mintime,  max = maxtime)
     
@@ -91,19 +96,23 @@ shinyServer(function(input, output, session) {
   
   output$VitalsPlot <- renderPlot({
     plotvitals <- vitals()
-    if(nrow(plotvitals) == artefacts$numberofvitals){
-      plotvitals$artefact <- artefacts$status$status
-    } else {
-      plotvitals$artefact <- FALSE
-    }
+    
+    # combine vitals() and artefacts$status
+    
     plotdat <- plotvitals %>% 
+      left_join(artefacts$status, by = 'id') %>%
+      mutate(artefact = status) %>%
       mutate(type = factor(match(type, vitaltypes$field), 
                            levels = seq_len(nrow(vitaltypes)), 
                            labels = vitaltypes$label))
+    
     if((plotvitals %>% filter(grepl("nibp$",type)) %>% nrow) > 0){
+      
       # separate dataset to plot errorbars (NIBP)
-      nibpdat <- plotvitals %>% filter(grepl("nibp$",type)) %>% 
-        select(-value, - artefact,-id) %>%
+      
+      nibpdat <- plotvitals %>% 
+        filter(grepl("nibp$",type)) %>% 
+        select(type, plotvalue, time) %>%
         spread(type, plotvalue) %>%
         mutate(type = factor(match("meannibp", vitaltypes$field), 
                              levels = seq_len(nrow(vitaltypes)), 
@@ -144,28 +153,22 @@ shinyServer(function(input, output, session) {
   
   
   # display artefact information
-
-    output$artefacts <- renderDataTable(
+  
+  output$artefacts <- renderDataTable(
+    
     vitals() %>%
       # should be changed to a join with id
       left_join(artefacts$status, by = 'id') %>%
+      filter(status) %>%
       arrange(type, time) %>%
       group_by(type) %>%
-      mutate(vital = if_else(row_number()==1,unlist(vitaltypes[match(type, vitaltypes$field),"label"]),""),
+      # display vital name only in first row per vital
+      mutate(vital = if_else(row_number(time)==1,unlist(vitaltypes[match(type, vitaltypes$field),"label"]),""),
              time = as.integer(floor(time))) %>%
       ungroup() %>%
-      select(id, vital, time, value,status) %>%
-      rowwise() %>%
-      mutate(delete = as.character(actionButton(
-                                 paste0('button',id),
-                                 label = "Delete",
-                                 onclick = paste0('Shiny.onInputChange(\"select_button\",  this.id)') ))) %>%
-      ungroup() %>%
-      filter(status),
-      escape = FALSE
+      select(id, vital, time, value, delete),
+    escape = FALSE
   )
-
-  tstValue <- reactiveValues(artefact = '')
   
   observeEvent(input$select_button, {
     
@@ -176,7 +179,7 @@ shinyServer(function(input, output, session) {
   })
   
   output$debug <- renderPrint({
-    str(artefacts$status)
+    
   })
   
   observeEvent(input$Save, {
@@ -187,6 +190,5 @@ shinyServer(function(input, output, session) {
     saveRDS(dat,
             paste0("data/annotated_case_",input$case,"_",timestmp,".RDS"))
   })
-
   
 })

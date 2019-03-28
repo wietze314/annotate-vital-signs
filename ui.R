@@ -33,7 +33,10 @@ shinyUI(fluidPage(
                               width = "95%"),
                   actionButton("TimePlus30", "+30")
       ),
-      actionButton("Save","Save"),
+      splitLayout(cellWidths = c('20%','80%'),
+                  actionButton("Save","Save"),
+                  textOutput("FileStatus")),
+      
       h2("Marked Artefacts"),
       dataTableOutput("artefacts"),
       verbatimTextOutput("debug")
