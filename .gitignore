@@ -3,3 +3,6 @@
 .RData
 .Ruserdata
 data/*
+functions/data.R
+functions/SQLdata.R
+functions/config.R
