@@ -33,12 +33,24 @@ shinyUI(fluidPage(theme = "shiny.css",
     # Show a plot of the generated distribution
     mainPanel(
       plotOutput("VitalsPlot", click = "VitalsPlot_click", brush = "VitalsPlot_brush"),
-      splitLayout(cellWidths = c("10%", "80%","10%"),
+      splitLayout(cellWidths = c(rep("10%",3), "40%",rep("10%",3)),
+                  actionButton("TimeMin60", "-60"),
                   actionButton("TimeMin30", "-30"),
-                  sliderInput("PlotTime", min = 0, max = 0, value = 0, label = "Time", step = 1,
-                              width = "95%"),
-                  actionButton("TimePlus30", "+30")
+                  actionButton("TimeMin10", "-10"),
+                  textInput("PlotTime", value = 0, label = "Time"),
+                  actionButton("TimePlus10", "+10"),
+                  actionButton("TimePlus30", "+30"),
+                  actionButton("TimePlus60", "+60")
       ),
+      radioButtons("zoom",
+                   label = "Zoom",
+                   choices = c("10 minutes" = 10,
+                               "30 minutes" = 30,
+                               "60 minutes" = 60,
+                               "2 hours" = 120),
+                   selected = 60,
+                   
+                   inline = TRUE),
       h2("Marked Artefacts"),
       dataTableOutput("artefacts"),
       verbatimTextOutput("debug")

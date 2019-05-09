@@ -8,11 +8,9 @@
 #
 
 
-# Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
   
-  
-  # for input buttons table
+  # for input buttons table (delete buttons)
   shinyInput <- function(FUN, len, id, ...) {
     inputs <- character(len)
     for (i in seq_len(len)) {
@@ -79,26 +77,56 @@ shinyServer(function(input, output, session) {
   
   observe({
     mintime <- unlist(min(vitals()[,'time'][[1]]))
-    maxtime <- unlist(max((vitals()[,'time'][[1]])-minutes(60)),mintime)
     
-    updateSliderInput(session = session, inputId = "PlotTime", min = mintime,  max = maxtime)
+    updateTextInput(session = session, inputId = "PlotTime", value = as.character(mintime))
     
   })
   
+
   # navigation through procedure
-  
-  observeEvent(input$TimePlus30, {
-    updateSliderInput(session = session, inputId = "PlotTime", value = input$PlotTime+30)
+
+  mintime <- reactive({
+    min(vitals()[,'time'][[1]])
   })
   
-  observeEvent(input$TimeMin30, {
-    updateSliderInput(session = session, inputId = "PlotTime", value = input$PlotTime-30)
+  maxtime <- reactive({
+    max(max(vitals()[,'time'][[1]]) - minutes(input$zoom),mintime())
   })
+    
+  setTime <- function(step){
+    mintime <- mintime()
+    maxtime <- maxtime()
+    
+    curtime <- as.POSIXct(input$PlotTime)
+    nexttime <- curtime + minutes(step)
+    nexttime <- case_when(nexttime > maxtime ~ maxtime,
+                          nexttime < mintime ~ mintime,
+                          TRUE ~ nexttime)
+    updateTextInput(session = session, inputId = "PlotTime",
+                    value = as.character(nexttime))
+  }
+  
+  observeEvent(input$TimePlus60, {setTime(+60)})
+  observeEvent(input$TimeMin60,  {setTime(-60)})
+  observeEvent(input$TimePlus30, {setTime(+30)})
+  observeEvent(input$TimeMin30,  {setTime(-30)})
+  observeEvent(input$TimePlus10, {setTime(+10)})
+  observeEvent(input$TimeMin10,  {setTime(-10)})
+  
   
   # plot vitals and artefact status
   
   output$VitalsPlot <- renderPlot({
     plotvitals <- vitals()
+    
+    if(nrow(plotvitals>0))
+    {
+    if(input$PlotTime == "0"){
+      timemin <- min(plotvitals$time)
+    } else {
+      timemin = as.POSIXct(input$PlotTime)
+    }
+    timemax = timemin + minutes(input$zoom)
     
     # combine vitals() and artefacts$status
     
@@ -144,14 +172,14 @@ shinyServer(function(input, output, session) {
                     position = position_dodge(.1)) +
       scale_color_manual(values = vitalpalette) +
       coord_cartesian(ylim = c(0, 300),
-                      xlim = c(input$PlotTime,input$PlotTime+minutes(60))) +
+                      xlim = c(timemin, timemax)) +
       geom_point() +
       geom_line(data = plotdat %>% filter(!grepl("NIBP$", type))) +
       # mark artefacts
       geom_point(data = plotdat %>% filter(artefact), mapping = aes(x = time, y = plotvalue, color = type),
                  shape = 4, size = 2, stroke = 2) +
       theme_bw()
-    
+    }
   })
   
   

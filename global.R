@@ -101,9 +101,3 @@ getCaseList <- function(date){
     filter(as.Date(dos) == date)
   setNames(dat$id, paste(dat$id, format(dat$dos,"%H:%M"), dat$procedure, sep = " - "))
 }
-
-caseinfo <- data.frame(id = 1:10,
-                    dos = as.Date('2018-04-01') + sample(-10:10,10),
-                    procedure = "test procedure")
-
-casechoices <- setNames(caseinfo$id, paste(caseinfo$id, caseinfo$dos, caseinfo$procedure))
