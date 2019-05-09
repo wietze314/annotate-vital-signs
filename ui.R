@@ -19,9 +19,12 @@ shinyUI(fluidPage(theme = "shiny.css",
   
   sidebarLayout(
     sidebarPanel(
+      selectInput(inputId = "dos",
+                  "select date of surgery",
+                  choices = getDateList()),
       selectInput(inputId = "case",
                   label = "Select case:",
-                  choices = casechoices),
+                  choices = getCaseList(min(getDateList()))),
       textAreaInput("remarks","Remarks"),
       actionButton("Save","Save"),
       textOutput("FileStatus")

@@ -6,6 +6,7 @@ require(ggplot2)
 require(purrr)
 require(tidyr)
 require(stringr)
+require(lubridate)
 
 set.seed(314)
 
@@ -54,7 +55,8 @@ getCaseData <- function(getCase = 1){
     # special display modus (local preference saturation on top in AIMS)
     mutate(plotvalue = if_else(type == "saturation",3*value,value)) %>%
     # simulate measurement identifier from data source
-    mutate(id = paste0(type, time))
+    mutate(id = paste0(type, time)) %>%
+    mutate(time = as.POSIXct('2018-04-01 9:00') + minutes(time))
   
  
 }
@@ -64,6 +66,41 @@ getCaseData <- function(getCase = 1){
 # example data is simulated
 # this function should be replaced by a function that collects the actual cases from the AIMS
 
+procedures <- c('heart',
+                'right leg',
+                'left leg',
+                'right arm',
+                'levt arm',
+                'right eye',
+                'left eye',
+                'abdomen',
+                'brain')
+ncase <- 100
+
+allcaseinfo <- data.frame(id = 1:ncase,
+                          dos = as.POSIXct('2018-04-01 9:00') + 
+                            days(sample(-10:10,ncase, replace = T)) +
+                            hours(sample(0:8, ncase, replace = T)),
+                          procedure = paste('surgery on', sample(procedures,ncase, replace = T)))
+
+# get list of available dates
+
+getDateList <- function(){
+  min <- allcaseinfo$dos %>% as.Date %>% min
+  max <- allcaseinfo$dos %>% as.Date %>% max
+  dat <- data.frame(dos = min + days(0:as.numeric(difftime(max,min),units = "days"))) %>%
+    left_join(allcaseinfo %>% mutate(dos = as.Date(dos)), by = 'dos') %>%
+    group_by(dos) %>%
+    summarise(n = sum(!is.na(id))) %>%
+    mutate(label = paste0(dos, " (",n,")"))
+  setNames(dat$dos, dat$label)
+}
+
+getCaseList <- function(date){
+  dat <- allcaseinfo %>%
+    filter(as.Date(dos) == date)
+  setNames(dat$id, paste(dat$id, format(dat$dos,"%H:%M"), dat$procedure, sep = " - "))
+}
 
 caseinfo <- data.frame(id = 1:10,
                     dos = as.Date('2018-04-01') + sample(-10:10,10),

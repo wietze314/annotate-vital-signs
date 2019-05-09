@@ -78,8 +78,8 @@ shinyServer(function(input, output, session) {
   # change range of slider input to match duration of surgery
   
   observe({
-    mintime <- floor(min(vitals()[,'time']))
-    maxtime <- ceiling(max((vitals()[,'time']-60),mintime))
+    mintime <- unlist(min(vitals()[,'time'][[1]]))
+    maxtime <- unlist(max((vitals()[,'time'][[1]])-minutes(60)),mintime)
     
     updateSliderInput(session = session, inputId = "PlotTime", min = mintime,  max = maxtime)
     
@@ -144,7 +144,7 @@ shinyServer(function(input, output, session) {
                     position = position_dodge(.1)) +
       scale_color_manual(values = vitalpalette) +
       coord_cartesian(ylim = c(0, 300),
-                      xlim = c(input$PlotTime,input$PlotTime+60)) +
+                      xlim = c(input$PlotTime,input$PlotTime+minutes(60))) +
       geom_point() +
       geom_line(data = plotdat %>% filter(!grepl("NIBP$", type))) +
       # mark artefacts
@@ -159,7 +159,10 @@ shinyServer(function(input, output, session) {
   
   output$artefacts <- renderDataTable(
     
-    vitals() %>%
+    if(any(artefacts$status$status))
+    {
+      
+        vitals() %>%
       # should be changed to a join with id
       left_join(artefacts$status, by = 'id') %>%
       filter(status) %>%
@@ -167,9 +170,14 @@ shinyServer(function(input, output, session) {
       group_by(type) %>%
       # display vital name only in first row per vital
       mutate(vital = if_else(row_number(time)==1,unlist(vitaltypes[match(type, vitaltypes$field),"label"]),""),
-             time = as.integer(floor(time))) %>%
+             time = format(time,"%H:%M")) %>%
       ungroup() %>%
-      select(id, vital, time, value, delete),
+      select(vital, time, value, delete)
+    } else
+    {
+      data.frame()
+    }
+      ,
     escape = FALSE
   )
   
