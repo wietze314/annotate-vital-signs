@@ -151,7 +151,7 @@ shinyServer(function(input, output, session) {
                plotvalue = meannibp)
       
     } else {
-      nibpdat <- data.frame(time = as.numeric(NA), 
+      nibpdat <- data.frame(time = as.POSIXct(NA), 
                             type = NA, 
                             meannibp = as.numeric(NA), 
                             dianibp = as.numeric(NA), 

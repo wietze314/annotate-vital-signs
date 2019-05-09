@@ -49,7 +49,6 @@ shinyUI(fluidPage(theme = "shiny.css",
                                "60 minutes" = 60,
                                "2 hours" = 120),
                    selected = 60,
-                   
                    inline = TRUE),
       h2("Marked Artefacts"),
       dataTableOutput("artefacts"),
