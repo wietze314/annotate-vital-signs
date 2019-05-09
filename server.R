@@ -162,22 +162,22 @@ shinyServer(function(input, output, session) {
     if(any(artefacts$status$status))
     {
       
-        vitals() %>%
-      # should be changed to a join with id
-      left_join(artefacts$status, by = 'id') %>%
-      filter(status) %>%
-      arrange(type, time) %>%
-      group_by(type) %>%
-      # display vital name only in first row per vital
-      mutate(vital = if_else(row_number(time)==1,unlist(vitaltypes[match(type, vitaltypes$field),"label"]),""),
-             time = format(time,"%H:%M")) %>%
-      ungroup() %>%
-      select(vital, time, value, delete)
+      vitals() %>%
+        # should be changed to a join with id
+        left_join(artefacts$status, by = 'id') %>%
+        filter(status) %>%
+        arrange(type, time) %>%
+        group_by(type) %>%
+        # display vital name only in first row per vital
+        mutate(vital = if_else(row_number(time)==1,unlist(vitaltypes[match(type, vitaltypes$field),"label"]),""),
+               time = format(time,"%H:%M")) %>%
+        ungroup() %>%
+        select(vital, time, value, delete)
     } else
     {
       data.frame()
     }
-      ,
+    ,
     escape = FALSE
   )
   
@@ -204,8 +204,8 @@ shinyServer(function(input, output, session) {
   output$FileStatus <- renderText({
     fl <- case_files()
     if(length(fl>0)){
-    paste0("Data previously stored as: ",fl[order(fl,decreasing = TRUE)[1]],
-          " (",length(fl), " files present)")
+      paste0("Data previously stored as: ",fl[order(fl,decreasing = TRUE)[1]],
+             " (",length(fl), " files present)")
     }
   })
   
