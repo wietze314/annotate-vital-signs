@@ -53,7 +53,8 @@ if(file.exists("functions/data.R"))
                             dos = as.POSIXct('2018-04-01 9:00') + 
                               days(sample(-10:10,ncase, replace = T)) +
                               hours(sample(0:8, ncase, replace = T)),
-                            procedure = paste('surgery on', sample(procedures,ncase, replace = T)))
+                            procedure = paste('surgery on', sample(procedures,ncase, replace = T)),
+                            stringsAsFactors = FALSE)
   
   # get list of available dates
   
@@ -99,12 +100,13 @@ if(file.exists("functions/data.R"))
     
     vitals %>%
       bind_rows(vitalsnibp) %>%
-      mutate(case = getCase) %>%
+      mutate(case = as.character(getCase)) %>%
+      inner_join(allcaseinfo %>% mutate(id = as.character(id)), by = c('case' = 'id')) %>%
       # special display modus (local preference saturation on top in AIMS)
       mutate(plotvalue = if_else(type == "saturation",3*value,value)) %>%
       # simulate measurement identifier from data source
       mutate(id = paste0(type, time)) %>%
-      mutate(time = as.POSIXct('2018-04-01 9:00') + minutes(time))
+      mutate(time = dos + minutes(time))
     
     
   }
