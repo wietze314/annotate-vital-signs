@@ -64,13 +64,13 @@ if(file.exists("functions/data.R"))
       left_join(allcaseinfo %>% mutate(dos = as.Date(dos)), by = 'dos') %>%
       group_by(dos) %>%
       summarise(n = sum(!is.na(id))) %>%
-      mutate(label = paste0(dos, " (",n,")"))
-    setNames(dat$dos, dat$label)
+      mutate(label = paste0(format(dos, "%Y/%m/%d"), " (",n,")"))
+    setNames(format(dat$dos,"%Y/%m/%d"), dat$label)
   }
   
   getCaseList <- function(date){
     dat <- allcaseinfo %>%
-      filter(as.Date(dos) == date)
+      filter(format(dos,"%Y/%m/%d") == date)
     setNames(dat$id, paste(dat$id, format(dat$dos,"%H:%M"), dat$procedure, sep = " - "))
   }
   

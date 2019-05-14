@@ -83,6 +83,15 @@ shinyServer(function(input, output, session) {
   })
   
 
+  observeEvent(input$dos,{
+    
+    cases <- getCaseList(input$dos)
+    updateSelectInput(session = session, inputId = "case",
+                      choices = cases,
+                      selected = cases[1])
+    
+  }, ignoreInit = TRUE)
+  
   # navigation through procedure
 
   mintime <- reactive({
@@ -151,25 +160,15 @@ shinyServer(function(input, output, session) {
                plotvalue = meannibp)
       
     } else {
-      nibpdat <- data.frame(time = as.POSIXct(NA), 
-                            type = NA, 
-                            meannibp = as.numeric(NA), 
-                            dianibp = as.numeric(NA), 
-                            sysnibp = as.numeric(NA), 
-                            plotvalue = as.numeric(NA))
+      nibpdat <- data.frame()
     }
     
     
     plotid <- input$case
     
-    ggplot(plotdat,
+    p <- ggplot(plotdat,
            aes(x = time, y = plotvalue, color = type)) +
       labs(title = paste0("vitals from ",plotid)) +
-      geom_errorbar(data = nibpdat, 
-                    aes(x = time,
-                        ymin = dianibp, 
-                        ymax = sysnibp), 
-                    position = position_dodge(.1)) +
       scale_color_manual(values = vitalpalette) +
       coord_cartesian(ylim = c(0, 300),
                       xlim = c(timemin, timemax)) +
@@ -177,8 +176,20 @@ shinyServer(function(input, output, session) {
       geom_line(data = plotdat %>% filter(!grepl("NIBP$", type))) +
       # mark artefacts
       geom_point(data = plotdat %>% filter(artefact), mapping = aes(x = time, y = plotvalue, color = type),
-                 shape = 4, size = 2, stroke = 2) +
-      theme_bw()
+                 shape = 4, size = 2, stroke = 2) 
+    
+    if (nrow(nibpdat) > 0){
+      p <- p + geom_errorbar(data = nibpdat, 
+                             aes(x = time,
+                                 ymin = dianibp, 
+                                 ymax = sysnibp), 
+                             position = position_dodge(.1),
+                             width = 60
+                             )
+    }
+    
+    p +
+      theme_bw() 
     }
   })
   
